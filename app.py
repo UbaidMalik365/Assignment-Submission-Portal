@@ -18,7 +18,7 @@ def validate_submission(name, reg_no, title, url):
 
     parsed = urlparse(url.strip())
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        errors.append("Invalid URL")
+        pass #errors.append("Invalid URL")
     return errors
 
 

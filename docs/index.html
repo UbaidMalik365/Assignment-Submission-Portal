@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assignment Submission Portal (Demo)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background: #f3f4f8; color: #1f2937; }
+    header { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; padding: 40px 20px; text-align: center; }
+    header h1 { margin: 0 0 8px; font-size: 2rem; }
+    header p { margin: 0; opacity: 0.85; }
+    .container { max-width: 900px; margin: -25px auto 40px; padding: 0 16px; }
+    .card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+    .card h2 { margin: 0 0 18px; font-size: 1.25rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+    input { width: 100%; padding: 11px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.95rem; }
+    input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.2); }
+    button { margin-top: 20px; width: 100%; padding: 12px; border: none; border-radius: 8px; background: #4f46e5; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    button:hover { background: #4338ca; }
+    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; font-size: 0.92rem; }
+    .alert.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+    .alert.success { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
+    .note { background: #fef9c3; color: #854d0e; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; }
+    .badge { display: inline-block; background: #e0e7ff; color: #4338ca; font-size: 0.8rem; padding: 2px 10px; border-radius: 999px; margin-left: 8px; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; }
+    th { background: #f9fafb; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #6b7280; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+    td a { color: #4f46e5; word-break: break-all; }
+    .empty { text-align: center; color: #9ca3af; padding: 24px 0; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📚 Assignment Submission Portal</h1>
+    <p>Submit your assignment link below</p>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>New Submission</h2>
+      <div class="note">Demo version: data is kept in the page only and is not saved.</div>
+      <div id="messages"></div>
+
+      <form id="form">
+        <div class="grid">
+          <div>
+            <label for="name">Name</label>
+            <input type="text" id="name" placeholder="e.g. Ali Khan">
+          </div>
+          <div>
+            <label for="reg_no">Registration Number</label>
+            <input type="text" id="reg_no" placeholder="e.g. 2022-CS-123">
+          </div>
+          <div class="full">
+            <label for="title">Assignment Title</label>
+            <input type="text" id="title" placeholder="e.g. DevOps Assignment 1">
+          </div>
+          <div class="full">
+            <label for="url">Submission URL</label>
+            <input type="text" id="url" placeholder="https://github.com/username/repo">
+          </div>
+        </div>
+        <button type="submit">Submit Assignment</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Saved Submissions <span class="badge" id="count">0</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Reg No</th><th>Title</th><th>URL</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="4" class="empty">No submissions yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const submissions = [];
+
+    function validate(name, regNo, title, url) {
+      const errors = [];
+      if (!name.trim()) errors.push("Name is required");
+      if (!regNo.trim()) errors.push("Registration number is required");
+      if (!title.trim()) errors.push("Assignment title is required");
+      try {
+        const u = new URL(url.trim());
+        if (u.protocol !== "http:" && u.protocol !== "https:") errors.push("Invalid URL");
+      } catch (e) {
+        errors.push("Invalid URL");
+      }
+      return errors;
+    }
+
+    function show(errors, ok) {
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+      errors.forEach(function (msg) {
+        const d = document.createElement("div");
+        d.className = "alert error";
+        d.textContent = msg;
+        box.appendChild(d);
+      });
+      if (ok) {
+        const d = document.createElement("div");
+        d.className = "alert success";
+        d.textContent = "Submission saved successfully!";
+        box.appendChild(d);
+      }
+    }
+
+    function render() {
+      const tbody = document.getElementById("rows");
+      document.getElementById("count").textContent = submissions.length;
+      tbody.innerHTML = "";
+      if (submissions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No submissions yet.</td></tr>';
+        return;
+      }
+      submissions.forEach(function (s) {
+        const tr = document.createElement("tr");
+        [s.name, s.regNo, s.title].forEach(function (text) {
+          const td = document.createElement("td");
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+        const tdUrl = document.createElement("td");
+        const a = document.createElement("a");
+        a.href = s.url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = s.url;
+        tdUrl.appendChild(a);
+        tr.appendChild(tdUrl);
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const regNo = document.getElementById("reg_no").value;
+      const title = document.getElementById("title").value;
+      const url = document.getElementById("url").value;
+
+      const errors = validate(name, regNo, title, url);
+      if (errors.length > 0) {
+        show(errors, false);
+        return;
+      }
+      submissions.push({ name: name.trim(), regNo: regNo.trim(), title: title.trim(), url: url.trim() });
+      show([], true);
+      render();
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

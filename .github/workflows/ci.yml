@@ -30,6 +30,16 @@ jobs:
           RECEIVER_URL: http://localhost:8000
         run: .\.ci-venv\Scripts\python send_report.py
 
+      - name: Email report
+        if: always()
+        shell: powershell
+        env:
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: .\.ci-venv\Scripts\python send_email.py  
+
   deploy:
     needs: test
     if: github.ref == 'refs/heads/main'

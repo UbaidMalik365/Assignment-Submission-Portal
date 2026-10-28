@@ -1,7 +1,7 @@
 venv/
+.ci-venv/
 __pycache__/
 .pytest_cache/
 submissions.json
 test-report.json
 pytest-raw.json
-.report.json
